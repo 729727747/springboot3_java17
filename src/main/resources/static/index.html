@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek智能问答系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-message .message-header {
+            color: #764ba2;
+        }
+
+        .bot-message .message-header {
+            color: #667eea;
+        }
+
+        .message-content {
+            padding: 12px 15px;
+            border-radius: 10px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .user-message .message-content {
+            background: #f3e5f5;
+        }
+
+        .bot-message .message-content {
+            background: #e3f2fd;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: white;
+            display: flex;
+            gap: 10px;
+        }
+
+        .question-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .question-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #5a67d8;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .cancel-button {
+            padding: 12px 25px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cancel-button:hover {
+            background: #ff5252;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.5);
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DeepSeek智能问答系统</h1>
+            <p>基于大模型的智能问答助手</p>
+        </div>
+        
+        <div id="chatContainer" class="chat-container">
+            <div class="message bot-message">
+                <div class="message-header">🤖 AI助手</div>
+                <div class="message-content welcome-message">
+                    欢迎使用DeepSeek智能问答系统！请输入您的问题开始对话。
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="questionInput" 
+                class="question-input" 
+                placeholder="请输入您的问题..." 
+                autocomplete="off"
+            >
+            <button id="actionButton" class="send-button">
+                <span>📤</span> 发送
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class QAInterface {
+            constructor() {
+                this.chatContainer = document.getElementById('chatContainer');
+                this.questionInput = document.getElementById('questionInput');
+                this.actionButton = document.getElementById('actionButton');
+                
+                this.isLoading = false;
+                this.abortController = null;
+                
+                this.initEventListeners();
+            }
+            
+            initEventListeners() {
+                // 发送按钮点击事件
+                this.actionButton.addEventListener('click', () => {
+                    if (this.isLoading) {
+                        this.cancelRequest();
+                    } else {
+                        this.sendQuestion();
+                    }
+                });
+                
+                // 回车键发送
+                this.questionInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (!this.isLoading) {
+                            this.sendQuestion();
+                        }
+                    }
+                });
+            }
+            
+            // 添加消息到聊天窗口
+            addMessage(text, isBot = false, isTyping = false, isError = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'message-header';
+                headerDiv.textContent = isBot ? '🤖 AI助手' : '👤 您';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                if (isTyping) {
+                    contentDiv.innerHTML = `
+                        <div class="typing-indicator">
+                            <div class="loading-spinner"></div>
+                            正在思考中...
+                        </div>
+                    `;
+                } else if (isError) {
+                    contentDiv.className += ' error-message';
+                    contentDiv.innerHTML = `
+                        <div style="color: #ff6b6b; font-weight: bold;">❌ 错误：</div>
+                        <div>${text}</div>
+                        ${this.isLoading ? '' : '<button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>'}
+                    `;
+                } else {
+                    contentDiv.textContent = text;
+                }
+                
+                messageDiv.appendChild(headerDiv);
+                messageDiv.appendChild(contentDiv);
+                
+                this.chatContainer.appendChild(messageDiv);
+                this.scrollToBottom();
+                
+                return messageDiv;
+            }
+            
+            // 滚动到底部
+            scrollToBottom() {
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+            
+            // 发送问题
+            async sendQuestion() {
+                const question = this.questionInput.value.trim();
+                if (!question || this.isLoading) return;
+                
+                // 保存最后一个问题用于重试
+                this.lastQuestion = question;
+                
+                // 添加用户问题
+                this.addMessage(question, false);
+                this.questionInput.value = '';
+                
+                // 设置加载状态
+                this.isLoading = true;
+                this.updateActionButton(true);
+                
+                // 添加AI回复占位符
+                const botMessageElement = this.addMessage('', true, true);
+                
+                try {
+                    // 创建AbortController用于取消请求
+                    this.abortController = new AbortController();
+                    
+                    // 使用流式API
+                    const response = await fetch('/api/v1/qa/chat/stream', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ question: question }),
+                        signal: this.abortController.signal
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    // 检查Content-Type头
+                    const contentType = response.headers.get('Content-Type');
+                    console.log('Response Content-Type:', contentType);
+                    if (!contentType || !contentType.includes('text/event-stream')) {
+                        throw new Error('服务器响应不是流式格式，请检查API端点是否正确');
+                    }
+                    
+                    // 处理流式响应
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let answer = '';
+                    const contentDiv = botMessageElement.querySelector('.message-content');
+                    
+                    // 移除加载指示器
+                    contentDiv.innerHTML = '';
+                    
+                    // 缓冲区用于处理分块数据
+                    let buffer = '';
+                    
+                    // 读取流数据
+                    let chunkCount = 0;
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        console.log(`Chunk ${++chunkCount}: done=${done}`, value);
+                        
+                        if (done) {
+                            console.log('Stream completed');
+                            break;
+                        }
+                        
+                        // 解码数据并添加到缓冲区
+                        const decodedValue = decoder.decode(value, { stream: true });
+                        buffer += decodedValue;
+                        console.log('Decoded value:', decodedValue);
+                        console.log('Buffer content:', buffer);
+                        
+                        // 按行分割数据，处理完整的行
+                        const lines = buffer.split('\n');
+                        console.log('Lines after split:', lines);
+                        
+                        // 保留最后一个可能不完整的行在缓冲区中
+                        buffer = lines.pop() || '';
+                        console.log('Remaining buffer:', buffer);
+                        
+                        // 处理完整的行
+                        for (const line of lines) {
+                            console.log('Processing line:', line);
+                            if (line.startsWith('data:')) {
+                                const data = line.slice(5);
+                                console.log('Data extracted:', data);
+                                
+                                // 检查是否为流结束标记
+                                if (data === '[DONE]') {
+                                    console.log('Stream end marker found');
+                                    // 流结束，继续处理其他行
+                                    continue;
+                                }
+                                
+                                try {
+                                    const jsonData = JSON.parse(data);
+                                    console.log('Parsed JSON data:', jsonData);
+                                    
+                                    // 正确处理DeepSeek API的流式响应格式
+                                    const content = jsonData.choices?.[0]?.delta?.content;
+                                    console.log('Content from delta:', content);
+                                    
+                                    if (content) {
+                                        answer += content;
+                                        console.log('Updated answer:', answer);
+                                        // 使用textContent而不是innerHTML以防止XSS攻击
+                                        contentDiv.textContent = answer;
+                                        this.scrollToBottom();
+                                    } else {
+                                        console.log('No content in delta:', jsonData);
+                                    }
+                                    
+                                    // 检查是否有错误信息
+                                    if (jsonData.error) {
+                                        console.log('Error in API response:', jsonData.error);
+                                        throw new Error(jsonData.error.message || 'API返回错误');
+                                    }
+                                } catch (e) {
+                                    // 如果解析失败但不是语法错误，则抛出异常
+                                    if (!(e instanceof SyntaxError)) {
+                                        throw e;
+                                    }
+                                    // 对于JSON语法错误，我们记录日志但继续处理
+                                    console.warn('JSON解析警告:', e, '原始数据:', data);
+                                }
+                            } else if (line.trim() !== '') {
+                                console.log('Non-data line ignored:', line);
+                            }
+                        }
+                    }
+                    
+                    // 处理缓冲区中剩余的数据（如果有）
+                    console.log('Final buffer processing:', buffer);
+                    if (buffer && buffer.startsWith('data: ')) {
+                        const data = buffer.slice(6);
+                        console.log('Final buffer data:', data);
+                        if (data !== '[DONE]') {
+                            try {
+                                const jsonData = JSON.parse(data);
+                                console.log('Parsed final buffer JSON:', jsonData);
+                                
+                                // 正确处理DeepSeek API的流式响应格式
+                                const content = jsonData.choices?.[0]?.delta?.content;
+                                console.log('Final content from delta:', content);
+                                
+                                if (content) {
+                                    answer += content;
+                                    console.log('Final updated answer:', answer);
+                                    contentDiv.textContent = answer;
+                                    this.scrollToBottom();
+                                } else {
+                                    console.log('No content in final delta:', jsonData);
+                                }
+                            } catch (e) {
+                                if (!(e instanceof SyntaxError)) {
+                                    throw e;
+                                }
+                                console.warn('JSON解析警告:', e, '原始数据:', data);
+                            }
+                        }
+                    }
+                    
+                    // 检查是否有内容返回
+                    console.log('Final answer content:', answer);
+                    console.log('Answer length:', answer.length);
+                    if (!answer) {
+                        console.log('No content received from API, showing error message');
+                        contentDiv.textContent = 'API没有返回有效内容，请稍后重试。';
+                    }
+                } catch (error) {
+                    console.error('Error in sendQuestion:', error);
+                    if (error.name === 'AbortError') {
+                        // 请求被取消
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b;">回答已被用户取消</div>
+                        `;
+                    } else if (error.message && error.message.includes('HTTP错误: 400')) {
+                        // 400错误处理
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b; font-weight: bold;">❌ 请求错误：</div>
+                            <div>您的请求格式可能不正确，请检查后重试。</div>
+                            <button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>
+                        `;
+                    } else if (error.message && error.message.includes('HTTP错误: 500')) {
+                        // 500错误处理
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b; font-weight: bold;">❌ 服务器错误：</div>
+                            <div>服务器内部出现错误，请稍后重试或联系管理员。</div>
+                            <button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>
+                        `;
+                    } else if (error.message && error.message.includes('HTTP错误: 404')) {
+                        // 404错误处理
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b; font-weight: bold;">❌ 接口错误：</div>
+                            <div>请求的接口不存在，请检查API地址是否正确。</div>
+                            <button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>
+                        `;
+                    } else if (error.message && error.message.includes('HTTP错误:')) {
+                        // 其他HTTP错误
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        const statusMatch = error.message.match(/HTTP错误: (\d+)/);
+                        const statusCode = statusMatch ? statusMatch[1] : '未知';
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b; font-weight: bold;">❌ HTTP错误 (${statusCode})：</div>
+                            <div>请求失败，请稍后重试。</div>
+                            <button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>
+                        `;
+                    } else if (error.message && error.message.includes('服务器响应不是流式格式')) {
+                        // 响应格式错误
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b; font-weight: bold;">❌ 响应格式错误：</div>
+                            <div>服务器返回的数据格式不正确，请联系管理员。</div>
+                            <button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>
+                        `;
+                    } else {
+                        // 其他错误
+                        const contentDiv = botMessageElement.querySelector('.message-content');
+                        contentDiv.innerHTML = `
+                            <div style="color: #ff6b6b; font-weight: bold;">❌ 错误：</div>
+                            <div>${error.message || '获取回答时出现未知错误，请稍后重试。'}</div>
+                            <button class="retry-button" onclick="window.qaInterface.retryLastQuestion()">🔄 重试</button>
+                        `;
+                    }
+                } finally {
+                    this.isLoading = false;
+                    this.updateActionButton(false);
+                    this.abortController = null;
+                }
+            }
+            
+            // 重试上一个问题
+            retryLastQuestion() {
+                if (this.lastQuestion && !this.isLoading) {
+                    // 清除最后一个错误消息
+                    const lastBotMessage = this.chatContainer.querySelector('.message.bot-message:last-child');
+                    if (lastBotMessage) {
+                        lastBotMessage.remove();
+                    }
+                    
+                    // 重新发送问题
+                    this.questionInput.value = this.lastQuestion;
+                    this.sendQuestion();
+                }
+            }
+            
+            // 取消请求
+            cancelRequest() {
+                if (this.isLoading && this.abortController) {
+                    this.abortController.abort();
+                }
+            }
+            
+            // 更新按钮状态
+            updateActionButton(isLoading) {
+                if (isLoading) {
+                    this.actionButton.className = 'cancel-button';
+                    this.actionButton.innerHTML = '<span>⏹️</span> 停止回答';
+                } else {
+                    this.actionButton.className = 'send-button';
+                    this.actionButton.innerHTML = '<span>📤</span> 发送';
+                }
+                
+                this.questionInput.disabled = isLoading;
+            }
+        }
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            window.qaInterface = new QAInterface();
+        });
+    </script>
+</body>
+</html>

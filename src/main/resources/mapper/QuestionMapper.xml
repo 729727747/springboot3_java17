@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.deepseek.mapper.QuestionMapper">
+
+    <!-- 可以在这里添加自定义的SQL映射 -->
+    <!-- 由于我们使用的是MyBatis-Plus，大部分基础操作不需要XML配置 -->
+
+</mapper>

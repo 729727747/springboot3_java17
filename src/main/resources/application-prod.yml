@@ -1,0 +1,34 @@
+# 生产环境特定配置
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/deepseek_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    db-config:
+      id-type: AUTO
+
+deepseek:
+  api:
+    base-url: https://api.deepseek.com/v1
+    key: ${DEEPSEEK_API_KEY}
+    model: deepseek-chat
+    timeout: 30s
+
+logging:
+  level:
+    com.example.deepseek: WARN
+    org.springframework.web: WARN
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,29 @@
+# 开发环境特定配置
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:mysql://120.46.206.160:3306/demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: Mysql#147258369
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.example.deepseek.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+deepseek:
+  api:
+    base-url: https://api.deepseek.com/v1
+    key: sk-ca1255440a8f4b90abcf0ae67dd0b9a5
+    model: deepseek-chat
+    timeout: "30"
+
+logging:
+  level:
+    org.mybatis: DEBUG
+    com.example.deepseek: DEBUG
+    org.springframework.web: DEBUG
