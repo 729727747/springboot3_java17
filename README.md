@@ -2,6 +2,26 @@
 
 基于Spring Boot 3.x和Java 17的微服务项目，集成DeepSeek大模型实现智能问答功能，并使用MyBatis Plus操作MySQL数据库。
 
+## Running the Application
+
+To run this application:
+
+```bash
+# Using docker-compose
+docker-compose up --build
+```
+
+The application will be accessible at http://localhost:8080
+
+## Running on Red Hat Systems
+
+For Red Hat Linux systems, use the specialized Dockerfile and docker-compose configuration:
+
+```bash
+# Using Red Hat specific docker-compose file
+docker-compose -f docker-compose.redhat.yml up --build
+```
+
 ## 功能特性
 
 - 集成DeepSeek大模型API实现智能问答
