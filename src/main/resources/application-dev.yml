@@ -19,7 +19,7 @@ deepseek:
   api:
     base-url: https://api.deepseek.com/v1
     key: sk-ca1255440a8f4b90abcf0ae67dd0b9a5
-    model: deepseek-chat
+    model: deepseek-reasoner
     timeout: "30"
 
 logging:
