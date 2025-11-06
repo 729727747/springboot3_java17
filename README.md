@@ -150,6 +150,109 @@ POST /api/v1/qa/chat
 }
 ```
 
+## Windows 环境下部署到 Linux 服务器
+
+### 简化版部署（推荐）
+
+直接使用用户名和密码进行部署，无需设置SSH密钥认证。该脚本会自动下载并安装PuTTY工具包来处理SSH连接。
+
+在Windows命令提示符中执行以下命令：
+
+```bash
+# 简化版部署脚本（使用用户名和密码进行部署）
+.\simple-deploy.bat
+```
+
+脚本将自动完成以下步骤：
+1. 检查所需工具（plink、pscp）
+2. 下载并安装PuTTY工具包（如果尚未安装）
+3. 清理临时目录
+4. 准备需要同步的文件
+5. 创建远程项目目录
+6. 同步文件到远程服务器
+7. 在远程服务器执行test-compose.sh脚本
+8. 清理临时文件
+
+### 配置说明
+在使用 `simple-deploy.bat` 脚本之前，请确保已正确配置以下环境变量：
+
+- `REMOTE_USER`: 远程Linux服务器的用户名
+- `REMOTE_HOST`: 远程Linux服务器的IP地址或主机名
+- `REMOTE_PORT`: SSH端口号（默认为22）
+- `REMOTE_PASSWORD`: 远程Linux服务器的密码
+- `REMOTE_PROJECT_PATH`: 远程服务器上的项目路径
+
+### 在 Linux 服务器上配置 systemd 服务
+
+为了更好地管理您的应用，建议在 Linux 服务器上使用 systemd 服务。
+
+#### 创建 systemd 服务文件
+
+在 Linux 服务器上，创建 `/etc/systemd/system/deepseek-app.service` 文件，内容如下：
+
+```ini
+[Unit]
+Description=DeepSeek App
+After=network.target
+
+[Service]
+Type=simple
+User=your_username
+WorkingDirectory=/opt/deepseek-app
+ExecStart=/usr/bin/java -jar /opt/deepseek-app/deepseek-app.jar
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+请注意：
+1. 将 `User=your_username` 替换为实际的用户名
+2. 确保 `WorkingDirectory` 和 `ExecStart` 中的路径正确
+
+#### 启用并启动服务
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable deepseek-app
+sudo systemctl start deepseek-app
+```
+
+#### 管理服务
+
+```bash
+# 查看服务状态
+sudo systemctl status deepseek-app
+
+# 停止服务
+sudo systemctl stop deepseek-app
+
+# 重启服务
+sudo systemctl restart deepseek-app
+
+# 查看日志
+sudo journalctl -u deepseek-app -f
+```
+
+### 部署流程
+
+1. 在 Windows 系统的 Trae 编辑器中运行 `deploy-to-linux.ps1` 脚本
+2. 脚本会自动在本地编译、打包应用
+3. 自动将应用传输到远程 Linux 服务器
+4. 在服务器上，脚本会尝试停止旧服务并启动新服务
+5. 如果配置了 systemd 服务，应用将作为服务运行
+
+### 故障排除
+
+如果部署过程中遇到问题，请检查：
+
+1. 确保本地已安装 Maven 和 Java 开发环境
+2. 确保本地可以 SSH 连接到 Linux 服务器
+3. 确保 Linux 服务器上已安装 Java 运行环境
+4. 确保指定的部署路径在服务器上存在且有适当的权限
+5. 检查防火墙设置，确保应用端口已开放
+
 ## 许可证
 
 MIT
